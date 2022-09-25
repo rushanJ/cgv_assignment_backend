@@ -1,28 +1,3 @@
-import cv2 as cv
-import numpy as np
-import pytesseract
-
-charConfig = r"--psm 6 --oem 3"
-
-def get_cropped_image(image, x, y, w, h):
-    cropped_image = image[ y:y+h , x:x+w ]
-    return cropped_image
-
-
-def get_ROI(image, horizontal, vertical, left_line_index, right_line_index, top_line_index, bottom_line_index,offset=4):
-    x1 = vertical[left_line_index][2] + offset
-    y1 = horizontal[top_line_index][3] + offset
-    x2 = vertical[right_line_index][2] - offset
-    y2 = horizontal[bottom_line_index][3] - offset
-
-    w = x2 - x1
-    h = y2 - y1
-
-    cropped_image = get_cropped_image(image, x1, y1, w, h)
-
-    return cropped_image, (x1, y1, w, h)
-
-
 def table_detection(image):
     img_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
