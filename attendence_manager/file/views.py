@@ -16,7 +16,7 @@ import os
 import pytesseract
 import matplotlib.pyplot as plt
 import re
-
+import json
 
 def table_detection(img_path):
     img = cv2.imread(img_path)
@@ -50,6 +50,9 @@ def table_detection(img_path):
 
     contours, hierarchy = cv2.findContours(table_segment, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     count = 0
+    id_list = []
+    name_list = []
+    attendence_list = []
     for c in contours:
         x, y, w, h = cv2.boundingRect(c)
         if (w > 80 and (h > 20 and h < 500)) and w > 3 * h:
@@ -63,10 +66,12 @@ def table_detection(img_path):
             if count % 3 == 1:
                 print("id : ")
                 id=removeSpecialChars("id",pytesseract.image_to_string(cropped))
+                id_list.append(id)
                 print(pytesseract.image_to_string(cropped))
             if count % 3 == 2:
                 print("Name : ")
                 name=removeSpecialChars("name",pytesseract.image_to_string(cropped))
+                name_list.append(name)
             if count % 3 == 0:
                 print("Signature : ")
 
@@ -85,6 +90,7 @@ def table_detection(img_path):
                 signatureAvailability = (count255 / pixelCount) * 100
                 if signatureAvailability>9:
                     attendence= True
+
                 else:
                     attendence=False
                 print (id)
@@ -117,6 +123,44 @@ def removeSpecialChars(type,string):
     string = string.split("\n")
     print(string[0])
     return string[0]
+
+
+class ModulesAPIView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin,
+                  mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+    serializer_class = FileSerializer
+    queryset = File.objects.values()
+
+
+
+    def get(self, request, *args, **kwargs):
+        data={"All"}
+        for i in File.objects.values():
+            data.add( i["moduleName"])
+            print( i["moduleName"])
+        y= json.dumps(list(data))
+
+        return HttpResponse(y, content_type="application/json")
+
+
+class DatesAPIView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin,
+                  mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+    serializer_class = FileSerializer
+    queryset = File.objects.values()
+
+
+
+    def get(self, request, *args, **kwargs):
+        data={"All"}
+        for i in File.objects.values():
+            data.add( i["date"])
+            print( i["date"])
+        y= json.dumps(list(data))
+
+        return HttpResponse(y, content_type="application/json")
+
+
+
+
 
 
 class FileAPIView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin,

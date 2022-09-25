@@ -10,7 +10,8 @@ from rest_framework import mixins
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 import re
-
+import django_filters.rest_framework
+from django_filters.rest_framework import DjangoFilterBackend
 
 def removeSpecialChars(string):
 
@@ -20,15 +21,15 @@ def removeSpecialChars(string):
 
 class FileAPIView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin,
                   mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
-    serializer_class = AttendenceSerializer
     queryset = Attendence.objects.all()
+    serializer_class = AttendenceSerializer
 
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['moduleName', 'date']
 
 
     def get(self, request, *args, **kwargs):
-        string="a a) Se ma\nW Shashini Minosha De Silva\n|) $5 ooo"
-        s=removeSpecialChars(string)
-        print( )
+
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
