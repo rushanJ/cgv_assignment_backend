@@ -35,6 +35,13 @@ binary = cv.GaussianBlur(grayscale, (1, 1), 0)
 binary = get_binary(binary)
 cv.imwrite("images/" + "Binary" + ".png", binary)
 
+# Canny Edge detection
+canny = cv.GaussianBlur(grayscale, (1, 1), 0)
+canny = cv.Canny(canny, 400, 410)
+cv.imwrite("images/" + "Edges" + ".png", canny)
+
+horizontal, vertical = detect_lines(image, title='Hough Lines', minLinLength=20, threshold=50, maxLineGap=4, display=True, write=True)
+
 #Invert Area
 left_line_index = 1
 right_line_index = 5

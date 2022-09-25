@@ -4,6 +4,107 @@ import pytesseract
 
 charConfig = r"--psm 6 --oem 3"
 
+def is_vertical(line):
+    return line[0] == line[2]
+
+
+def is_horizontal(line):
+    return line[1] == line[3]
+
+def overlapping_filter(lines, sorting_index):
+    filtered_lines = []
+
+    lines = sorted(lines, key=lambda lines: lines[sorting_index])
+    separation = 1
+    for i in range(len(lines)):
+        l_curr = lines[i]
+        if (i > 0):
+            l_prev = lines[i - 1]
+            if ((l_curr[sorting_index] - l_prev[sorting_index]) > separation):
+                filtered_lines.append(l_curr)
+        else:
+            filtered_lines.append(l_curr)
+
+    return filtered_lines
+
+
+def detect_lines(image, title='default', rho=1, theta=np.pi / 180, threshold=120, minLinLength=10, maxLineGap=6, display=False, write=False):
+
+# image - source image
+# rho — distance resolution of the accumulator in pixels
+# theta — Angle resolution of the accumulator in radians
+# threshold — Accumulator threshold parameter. Only those lines are returned that get enough votes
+# line — Output vector of lines. Here is set to None, the value is saved to linesP
+# minLineLength — Minimum line length. Line segments shorter than that are rejected
+# maxLineGap — Maximum allowed gap between points on the same line to link them
+
+    if image is None:
+        print('Error opening image!')
+        return -1
+
+    # Resize Image
+    imgDownscale = 50
+    imgWidth = int(image.shape[1] * imgDownscale / 100)
+    imgHeight = int(image.shape[0] * imgDownscale / 100)
+    imgDim = (imgWidth, imgHeight)
+
+
+    # Copy edges to the images that will display the results
+    imageCopy = np.copy(image)
+    imageCopy = cv.resize(imageCopy, imgDim, interpolation=cv.INTER_AREA)
+
+    # Grayscale the image
+    grayscale = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+    # Canny Edge Detection
+    canny = cv.resize(grayscale, imgDim, interpolation=cv.INTER_AREA)
+    canny = cv.GaussianBlur(canny, (1, 1), 0)
+    canny = cv.Canny(canny, 400, 410)
+
+    cv.imshow("Binary", canny)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+    # linesP = cv.HoughLinesP(dst, 1 , np.pi / 180, 50, None, 290, 6)
+    linesP = cv.HoughLinesP(canny, rho, theta, threshold, None, minLinLength, maxLineGap)
+
+    horizontal_lines = []
+    vertical_lines = []
+
+    if linesP is not None:
+        for i in range(0, len(linesP)):
+            l = linesP[i][0]
+
+            if is_vertical(l):
+                vertical_lines.append(l)
+
+            elif is_horizontal(l):
+                horizontal_lines.append(l)
+
+        horizontal_lines = overlapping_filter(horizontal_lines, 1)
+        vertical_lines = overlapping_filter(vertical_lines, 0)
+
+    if display:
+        for i, line in enumerate(horizontal_lines):
+            cv.line(imageCopy, (line[0], line[1]), (line[2], line[3]), (0, 255, 0), 3, cv.LINE_AA)
+
+            cv.putText(imageCopy, str(i) + "h", (line[0] + 5, line[1]), cv.FONT_HERSHEY_SIMPLEX,
+                       0.5, (0, 0, 0), 1, cv.LINE_AA)
+
+        for i, line in enumerate(vertical_lines):
+            cv.line(imageCopy, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 3, cv.LINE_AA)
+            cv.putText(imageCopy, str(i) + "v", (line[0], line[1] + 5), cv.FONT_HERSHEY_SIMPLEX,
+                       0.5, (0, 0, 0), 1, cv.LINE_AA)
+
+        cv.imshow("Source", imageCopy)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
+
+    if write:
+        cv.imwrite("images/" + title + ".png", imageCopy);
+
+    return (horizontal_lines, vertical_lines)
+
 def get_cropped_image(image, x, y, w, h):
     cropped_image = image[ y:y+h , x:x+w ]
     return cropped_image
